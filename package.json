@@ -1,0 +1,22 @@
+{
+  "name": "magicmusic",
+  "version": "1.0.0",
+  "description": "choose your music!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrmagic2020/MagicMusic.git"
+  },
+  "keywords": [
+    "music"
+  ],
+  "author": "Mr. Magic",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mrmagic2020/MagicMusic/issues"
+  },
+  "homepage": "https://github.com/mrmagic2020/MagicMusic#readme"
+}
