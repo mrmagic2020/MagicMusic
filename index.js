@@ -1,5 +1,6 @@
 const logger = new NIL.Logger(`test`); // 声明logger
 const path = require(`path`); // 声明路径
+const { encode } = require("punycode");
 const request = require(`sync-request`);
 
 let vanilla_cfg = NIL._vanilla.cfg; // 读取/vanilla/config.json文件并将JSON对象转化为object
@@ -24,23 +25,29 @@ function getText(e) { // 一个获取文本消息的function
     return rt;
 }
 
-function GET_Request(key){
-    const api = `https://c.y.qq.com/soso/fcgi-bin/music_search_new_platform?searchid=53806572956004615&t=1&aggr=1&cr=1&catZhida=1&lossless=0&flag_qc=0&format=json&p=1&n=1&w=` + key;
-    /*
-    let obj = request(api, (error, response, body) => {
-        let data = JSON.parse(response);
-        let song_info = `${data.data.song.list[0].f}`;
-        let split_info = song_info.split(`|`);
-        let song_id = split_info[0];
+function GET_Request(key,platform){
+    const api_qq = `https://c.y.qq.com/soso/fcgi-bin/music_search_new_platform?searchid=53806572956004615&t=1&aggr=1&cr=1&catZhida=1&lossless=0&flag_qc=0&format=json&p=1&n=1&w=` + key;
+    const api_163 = `http://cloud-music.pl-fe.cn/search?keywords=` + key;
+    const api_kugou = `http://mobilecdn.kugou.com/api/v3/search/song?format=json&keyword=` + key + `&page=1&pagesize=20&showtype=1`;
+
+    if(platform == `qq`){
+        let obj = request(`GET`, api_qq);
+        let data = JSON.parse(obj.getBody(`utf8`));
+        let info = `${data.data.song.list[0].f}`;
+        let split = info.split(`|`);
+        let song_id = split[0];
         return song_id
-    });
-    */
-    let obj = request(`GET`, api);
-    let data = JSON.parse(obj.getBody(`utf8`));
-    let info = `${data.data.song.list[0].f}`;
-    let split = info.split(`|`);
-    let song_id = split[0];
-    return song_id
+    }else if(platform == `163`){
+        let obj = request(`GET`, api_163);
+        let data = JSON.parse(obj.getBody(`utf8`));
+        let song_id = `${data.result.songs[0].id}`;
+        return song_id
+    }else if(platform == `kugou`){
+        let obj = request(`GET`, api_kugou);
+        let data = JSON.parse(obj.getBody(`utf8`));
+        let song_id = `${data.data.info[0].group[0].audio_id}`;
+        return song_id
+    }
 }
 
 class MagicMusic extends NIL.ModuleBase{
@@ -64,10 +71,27 @@ class MagicMusic extends NIL.ModuleBase{
                             e.group.sendMsg(`格式：` + cmd + ` <歌名>`);
                     }
                     */
-
-                    var key = encodeURI(text.substring(cmd.length + 1));
-                    let song_id = GET_Request(key);
-                    e.group.shareMusic(`qq`, song_id);
+                    if(text.endsWith(`qq`) == true){
+                        var key = encodeURI(text.substring(cmd.length + 1, text.length - 3));
+                        let song_id = GET_Request(key, `qq`);
+                        e.group.shareMusic(`qq`, song_id);
+                    }else if(text.endsWith(`网易`) == true){
+                        var key = encodeURI(text.substring(cmd.length + 1, text.length - 3));
+                        let song_id = GET_Request(key, `163`);
+                        // e.group.sendMsg(song_id);
+                        e.group.shareMusic(`163`, song_id);
+                    }else if(text.endsWith(`酷狗`) == true){
+                        var key = encodeURI(text.substring(cmd.length + 1, text.length - 3));
+                        let song_id = GET_Request(key, `kugou`);
+                        e.group.sendMsg(song_id)
+                        e.group.shareMusic(`kugou`, song_id);
+                    }else if(text.endsWith(cmd) == true){
+                        e.group.sendMsg(`格式：` + cmd + ` <歌名> <平台（可选）>`);
+                    }else{
+                        var key = encodeURI(text.substring(cmd.length + 1));
+                        let song_id = GET_Request(key, platform);
+                        e.group.shareMusic(platform, song_id);
+                    }
                 }
             }
         });
